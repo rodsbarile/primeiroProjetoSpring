@@ -1,22 +1,21 @@
 package br.edu.exemplo.primeiroprojeto.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+
+@Entity
 public class Livro {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String titulo;
-
     private String autor;
 
     public Livro() {
-    }
-
-    public Livro(Long id, String titulo, String autor) {
-
-        this.id = id;
-        this.titulo = titulo;
-        this.autor = autor;
-
     }
 
     public Long getId() {

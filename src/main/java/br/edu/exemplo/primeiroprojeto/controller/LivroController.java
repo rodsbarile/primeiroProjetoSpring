@@ -1,66 +1,63 @@
 package br.edu.exemplo.primeiroprojeto.controller;
 
 import br.edu.exemplo.primeiroprojeto.model.Livro;
+import br.edu.exemplo.primeiroprojeto.repository.LivroRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 @RequestMapping("/livros")
 public class LivroController {
-    private final List<Livro> livros = new ArrayList<>();
-    private Long proximoId = 1L;
 
-    public LivroController() {
-        livros.add(new Livro(proximoId++, "Dom Casmurro", "Machado de Assis"));
-        livros.add(new Livro(proximoId++, "O Pequeno Principe", "Antoine de Saint-Exupery"));
+    private final LivroRepository repository;
+
+    public LivroController(LivroRepository repository) {
+        this.repository = repository;
+    }
+
+    @PostMapping
+    public Livro cadastrar(@RequestBody Livro livro) {
+        return repository.save(livro);
     }
 
     @GetMapping
     public List<Livro> listar() {
-        return livros;
+        return repository.findAll();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Livro> buscarPorId(@PathVariable Long id) {
-        for (Livro livro : livros) {
-            if (livro.getId().equals(id)) {
-                return ResponseEntity.ok(livro);
-            }
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    @PostMapping
-    public ResponseEntity<Livro> cadastrar(@RequestBody Livro livro) {
-        livro.setId(proximoId++);
-        livros.add(livro);
-        return ResponseEntity.status(201).body(livro);
+        return repository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Livro> atualizar(@PathVariable Long id,
-                                           @RequestBody Livro dadosAtualizados) {
-        for (Livro livro : livros) {
-            if (livro.getId().equals(id)) {
-                livro.setTitulo(dadosAtualizados.getTitulo());
-                livro.setAutor(dadosAtualizados.getAutor());
-                return ResponseEntity.ok(livro);
-            }
-        }
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<Livro> atualizar(
+            @PathVariable Long id,
+            @RequestBody Livro dadosAtualizados) {
+
+        return repository.findById(id)
+                .map(livro -> {
+                    livro.setTitulo(dadosAtualizados.getTitulo());
+                    livro.setAutor(dadosAtualizados.getAutor());
+
+                    Livro livroAtualizado = repository.save(livro);
+
+                    return ResponseEntity.ok(livroAtualizado);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> remover(@PathVariable Long id) {
-        for (Livro livro : livros) {
-            if (livro.getId().equals(id)) {
-                livros.remove(livro);
-                return ResponseEntity.noContent().build();
-            }
+        if (repository.existsById(id)) {
+            repository.deleteById(id);
+            return ResponseEntity.noContent().build();
         }
+
         return ResponseEntity.notFound().build();
     }
 }
